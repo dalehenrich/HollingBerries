@@ -1,0 +1,3 @@
+accessing
+productCode
+	^ productCode
