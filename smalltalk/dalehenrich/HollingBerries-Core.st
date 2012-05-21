@@ -4,32 +4,41 @@ Object subclass: #HBPriceListGenerator
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
+!HBPriceListGenerator methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:24'!
+formatDescription: description on: aStream
+	aStream nextPutAll: (String streamContents: [ :s | s nextPutAll: description ] limitedTo: 31)! !
+
+!HBPriceListGenerator methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:23'!
+formatSellByDate: sellByDate on: aStream
+	sellByDate printOn: aStream format: #(3 2 1 $/ 1 1 2)! !
+
+!HBPriceListGenerator methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:20'!
+formatSellingPrice: sellingPrice on: aStream
+	| priceString |
+	aStream nextPut: $R.
+	priceString := String streamContents: [ :s | sellingPrice / 100 printOn: s showingDecimalPlaces: 2 ].
+	8 - priceString size timesRepeat: [ aStream space ].
+	aStream nextPutAll: priceString! !
+
+!HBPriceListGenerator methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:36'!
+generatePriceListFrom: csvCollection on: aStream
+	2 to: csvCollection size do: [ :index | 
+		| product |
+		product := HBProduct fromCsv: (csvCollection at: index).
+		product unitCount
+			timesRepeat: [ 
+				self
+					formatSellingPrice: product sellingPrice on: aStream;
+					formatSellByDate: product sellByDate on: aStream;
+					formatDescription: product description on: aStream.
+				aStream cr ] ]! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 HBPriceListGenerator class
 	instanceVariableNames: ''!
 
-!HBPriceListGenerator class methodsFor: 'private' stamp: 'dkh 5/20/2012 15:43'!
-datePattern
-	^ 'yyyy/mm/dd'! !
-
-!HBPriceListGenerator class methodsFor: 'private' stamp: 'dkh 5/20/2012 18:28'!
-generatePriceListFrom: csvCollection on: stream
-	| csvLine product productCode |
-	2 to: csvCollection size do: [ :index | 
-		csvLine := csvCollection at: index.
-		productCode := (csvLine at: 2) asInteger.
-		product := (HBProduct from: productCode)
-			productCode: productCode;
-			description: (csvLine at: 3);
-			deliveryDate: (Date readFrom: (csvLine at: 4) readStream pattern: self datePattern);
-			costPrice: (csvLine at: 5) asInteger;
-			unitCount: (csvLine at: 6) asInteger;
-			supplierId: (csvLine at: 1) asInteger.
-		product priceListLineOn: stream ]! !
-
-
-!HBPriceListGenerator class methodsFor: 'generator' stamp: 'dkh 5/20/2012 18:57'!
+!HBPriceListGenerator class methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:29'!
 generatePriceListFromPath: csvFilePath
 	"self  generatePriceListFromPath: '/opt/git/HollingBerries/produce.csv'"
 
@@ -41,9 +50,9 @@ generatePriceListFromPath: csvFilePath
 			directory := fileStream directory ].
 	directory
 		forceNewFileNamed: 'pricefile.txt'
-		do: [ :stream | 
-			stream lineEndConvention: #lf.
-			self generatePriceListFrom: csvCollection on: stream ]! !
+		do: [ :fileStream | 
+			fileStream lineEndConvention: #lf.
+			self new generatePriceListFrom: csvCollection on: fileStream ]! !
 
 
 Object subclass: #HBProduct
@@ -52,33 +61,13 @@ Object subclass: #HBProduct
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBProduct methodsFor: 'price list generation' stamp: 'dkh 5/20/2012 16:17'!
-descriptionOn: aStream
-	aStream nextPutAll: (String streamContents: [ :s | s nextPutAll: self description ] limitedTo: 31)! !
+!HBProduct methodsFor: 'business rules' stamp: 'dkh 5/20/2012 16:07'!
+costPrice
+	^ costPrice! !
 
-!HBProduct methodsFor: 'price list generation' stamp: 'dkh 5/20/2012 17:19'!
-priceListLineOn: aStream
-	self unitCount
-		timesRepeat: [ 
-			aStream nextPut: $R.
-			self
-				sellingPriceOn: aStream;
-				sellByDateOn: aStream;
-				descriptionOn: aStream.
-			aStream cr ]! !
-
-!HBProduct methodsFor: 'price list generation' stamp: 'dkh 5/20/2012 17:29'!
-sellByDateOn: aStream
-	self sellByDate printOn: aStream format: #(3 2 1 $/ 1 1 2)! !
-
-!HBProduct methodsFor: 'price list generation' stamp: 'dkh 5/20/2012 17:25'!
-sellingPriceOn: aStream
-	| price priceString |
-	price := self sellingPriceInCents / 100 asScaledDecimal: 2.
-	priceString := String streamContents: [ :s | price printOn: s showingDecimalPlaces: 2 ].
-	8 - priceString size timesRepeat: [ aStream space ].
-	aStream nextPutAll: priceString! !
-
+!HBProduct methodsFor: 'business rules' stamp: 'dkh 5/20/2012 16:07'!
+deliveryDate
+	^ deliveryDate! !
 
 !HBProduct methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:10'!
 markup
@@ -92,34 +81,23 @@ sellByDate
 sellByDuration
 	^ 1 weeks! !
 
-!HBProduct methodsFor: 'business rules' stamp: 'dkh 5/20/2012 18:32'!
-sellingPriceInCents
-	^ (self supplier sellingPriceFor: self) max: 0! !
+!HBProduct methodsFor: 'business rules' stamp: 'dkh 5/20/2012 20:37'!
+sellingPrice
+	^ self supplier sellingPriceFor: self! !
 
 
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
-costPrice
-	^ costPrice! !
+!HBProduct methodsFor: 'initialization' stamp: 'dkh 5/20/2012 20:51'!
+initializeFromCsv: csvLine
+	description := csvLine at: 3.
+	deliveryDate := Date readFrom: (csvLine at: 4) readStream pattern: 'yyyy/mm/dd'.
+	costPrice := (csvLine at: 5) asInteger.
+	unitCount := (csvLine at: 6) asInteger.
+	supplierId := (csvLine at: 1) asInteger! !
 
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
-costPrice: anObject
-	costPrice := anObject! !
-
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
-deliveryDate
-	^ deliveryDate! !
-
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
-deliveryDate: anObject
-	deliveryDate := anObject! !
 
 !HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
 description
 	^ description! !
-
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:07'!
-description: anObject
-	description := anObject! !
 
 !HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:08'!
 productCode
@@ -138,27 +116,24 @@ supplierId
 	^ supplierId! !
 
 !HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:08'!
-supplierId: anObject
-	supplierId := anObject! !
-
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:08'!
 unitCount
 	^ unitCount! !
-
-!HBProduct methodsFor: 'accessing' stamp: 'dkh 5/20/2012 16:08'!
-unitCount: anObject
-	unitCount := anObject! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 HBProduct class
 	instanceVariableNames: ''!
 
-!HBProduct class methodsFor: 'instance creation' stamp: 'dkh 5/20/2012 18:28'!
-from: productCode
+!HBProduct class methodsFor: 'lookup' stamp: 'dkh 5/20/2012 20:43'!
+lookupProduct: productCode
 	^ (self allSubclasses reversed
 		detect: [ :productClass | productClass acceptsProductId: productCode ]
-		ifNone: [ self error: 'Product id out of range' ]) new! !
+		ifNone: [ self error: 'Product id out of range' ]) new productCode: productCode! !
+
+
+!HBProduct class methodsFor: 'instance creation' stamp: 'dkh 5/20/2012 20:52'!
+fromCsv: csvLine
+	^ (self lookupProduct: (csvLine at: 2) asInteger) initializeFromCsv: csvLine! !
 
 
 HBProduct subclass: #HBFruit
@@ -183,11 +158,11 @@ HBFruit subclass: #HBApple
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBApple methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:11'!
+!HBApple methodsFor: 'accessing' stamp: 'dkh 5/20/2012 17:11'!
 markup
 	^ 1.40! !
 
-!HBApple methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:48'!
+!HBApple methodsFor: 'accessing' stamp: 'dkh 5/20/2012 17:48'!
 sellByDuration
 	^ 2 weeks! !
 
@@ -207,7 +182,7 @@ HBFruit subclass: #HBBerry
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBBerry methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:11'!
+!HBBerry methodsFor: 'accessing' stamp: 'dkh 5/20/2012 17:11'!
 markup
 	^ 1.55! !
 
@@ -227,11 +202,11 @@ HBFruit subclass: #HBBanana
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBBanana methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:11'!
+!HBBanana methodsFor: 'accessing' stamp: 'dkh 5/20/2012 17:11'!
 markup
 	^ 1.35! !
 
-!HBBanana methodsFor: 'business rules' stamp: 'dkh 5/20/2012 17:48'!
+!HBBanana methodsFor: 'accessing' stamp: 'dkh 5/20/2012 17:48'!
 sellByDuration
 	^ 5 days! !
 
@@ -251,22 +226,14 @@ Object subclass: #HBSupplier
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 18:42'!
+!HBSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:32'!
 sellByDateFor: product
-	^ product deliveryDate + product sellByDuration + self sellByDuration! !
+	^ product deliveryDate + product sellByDuration! !
 
-!HBSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 18:35'!
+!HBSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:34'!
 sellingPriceFor: product
-	^ product costPrice * (product markup + self markup)! !
+	^ product costPrice * product markup! !
 
-
-!HBSupplier methodsFor: 'accessing' stamp: 'dkh 5/20/2012 18:41'!
-markup
-	^ 0! !
-
-!HBSupplier methodsFor: 'accessing' stamp: 'dkh 5/20/2012 18:38'!
-sellByDuration
-	^ 0 day! !
 
 !HBSupplier methodsFor: 'accessing' stamp: 'dkh 5/20/2012 15:57'!
 supplierId
@@ -304,14 +271,17 @@ HBSupplier subclass: #HBTroubleSupplier
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBTroubleSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 18:33'!
+!HBTroubleSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:32'!
+sellByDateFor: product
+	^ (super sellByDateFor: product) - self sellByPenalty! !
+
+!HBTroubleSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:32'!
+sellByPenalty
+	^ 3 days! !
+
+!HBTroubleSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:37'!
 sellingPriceFor: product
-	^ (super sellingPriceFor: product) - 200! !
-
-
-!HBTroubleSupplier methodsFor: 'accessing' stamp: 'dkh 5/20/2012 18:39'!
-sellByDuration
-	^ -3 days! !
+	^ (super sellingPriceFor: product) - 200 max: 0! !
 
 
 HBSupplier subclass: #HBPremiumSupplier
@@ -320,14 +290,13 @@ HBSupplier subclass: #HBPremiumSupplier
 	poolDictionaries: ''
 	category: 'HollingBerries-Core'!
 
-!HBPremiumSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 18:35'!
-sellingPriceFor: product
-	^ (super sellingPriceFor: product) roundUpTo: 100! !
-
-
-!HBPremiumSupplier methodsFor: 'accessing' stamp: 'dkh 5/20/2012 18:41'!
+!HBPremiumSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 18:41'!
 markup
 	^ 0.10! !
+
+!HBPremiumSupplier methodsFor: 'busines rules' stamp: 'dkh 5/20/2012 20:34'!
+sellingPriceFor: product
+	^ product costPrice * (product markup + self markup) roundUpTo: 100! !
 
 
 HBPremiumSupplier subclass: #HBKarelVisserSupplier
