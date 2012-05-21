@@ -1,3 +1,16 @@
+"load CSVParser by Thomas Cleenewerck"
+Gofer new
+  squeaksource: 'CSVParser';
+  package: 'CSV';
+  load!
+
+"patch CSVParser bug"!
+!CSVParser methodsFor: 'as yet unclassified' stamp: 'dkh 5/20/2012 18:02'!
+initializeWithStream: aStream
+	self initialize.
+	stream := aStream! !
+
+"HollingBerries Source"!
 Object subclass: #HBPriceListGenerator
 	instanceVariableNames: ''
 	classVariableNames: ''
@@ -39,8 +52,8 @@ HBPriceListGenerator class
 	instanceVariableNames: ''!
 
 !HBPriceListGenerator class methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:29'!
-generatePriceListFromPath: csvFilePath
-	"self  generatePriceListFromPath: '/opt/git/HollingBerries/produce.csv'"
+generatePriceList: priceFilePath from: csvFilePath
+	"self generatePriceList: '/opt/git/HollingBerries/smalltalk_pricelist.txt' from: '/opt/git/HollingBerries/produce.csv'"
 
 	| csvCollection directory |
 	FileStream
@@ -48,8 +61,8 @@ generatePriceListFromPath: csvFilePath
 		do: [ :fileStream | 
 			csvCollection := CSVParser parse: fileStream.
 			directory := fileStream directory ].
-	directory
-		forceNewFileNamed: 'pricefile.txt'
+	FileStream
+		forceNewFileNamed: priceFilePath
 		do: [ :fileStream | 
 			fileStream lineEndConvention: #lf.
 			self new generatePriceListFrom: csvCollection on: fileStream ]! !
@@ -126,7 +139,11 @@ HBProduct class
 
 !HBProduct class methodsFor: 'lookup' stamp: 'dkh 5/20/2012 20:43'!
 lookupProduct: productCode
-	^ (self allSubclasses reversed
+	| productClasses |
+	productClasses := OrderedCollection new.
+	self subclasses do: [ :productCategory | productClasses addAll: productCategory subclasses ].
+	productClasses addAll: self subclasses.
+	^ (productClasses
 		detect: [ :productClass | productClass acceptsProductId: productCode ]
 		ifNone: [ self error: 'Product id out of range' ]) new productCode: productCode! !
 
@@ -401,3 +418,5 @@ HBKarelVisserSupplier initialize!
 HBTogethernessTshabalalaSupplier initialize!
 HBSusanWindlerSupplier initialize!
 HBPromiseMashanguSupplier initialize!
+
+
