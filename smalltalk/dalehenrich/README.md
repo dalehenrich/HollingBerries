@@ -6,7 +6,7 @@ A Smalltalk solution based on [Pharo][3].
 
 ### Solution Installation
 
-After [installing launching Pharo](#smalltalk-installation), execute the
+After [**installing and launching Pharo**](#pharo-installation), execute the
 following in a Smalltalk workspace (edit the path to point to your
 clone):
 
