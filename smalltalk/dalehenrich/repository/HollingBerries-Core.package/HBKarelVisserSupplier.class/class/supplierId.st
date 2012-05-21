@@ -1,3 +1,0 @@
-accessing
-supplierId
-	^ 204
