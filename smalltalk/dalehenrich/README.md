@@ -4,28 +4,28 @@ A Smalltalk solution based on [Pharo][3].
 
 ## Solution
 
-### Installation
+### Solution Installation
 
-After [launching your Pharo image](#smallalk-installation), execute the
+After [installing launching Pharo](#smalltalk-installation), execute the
 following in a Smalltalk workspace (edit the path to point to your
 clone):
 
 ```Smalltalk
-FileStream fileNamed: '/opt/git/HollingBerries/smalltalk/dalehenrich/HollingBerries-Core.st'
+(FileStream fileNamed: '/opt/git/HollingBerries/smalltalk/dalehenrich/HollingBerries-Core.st') fileIn.
 ```
-### Execution
+### Solution Execution
 
 ```Smalltalk
 HBPriceListGenerator 
-    generatePriceList: '/opt/git/HollingBerries/smalltalk_pricelist.txt' 
+    generatePriceList: '/opt/git/HollingBerries/smalltalk_pricefile.txt' 
     from: '/opt/git/HollingBerries/produce.csv'
 ```
 
-## Smalltalk Installation
+## Pharo Installation
 
 You'll need to install a [Pharo1.3 image][1]. The [Pharo 1.3
 on-click][2] is a good choice. First 
-`unzip Pharo-1.3-13328-OneClick.zip`
+`unzip Pharo-1.3-13328-OneClick.zip`:
 
 ### On Linux
 

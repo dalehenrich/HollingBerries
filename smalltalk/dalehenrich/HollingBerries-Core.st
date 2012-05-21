@@ -53,7 +53,7 @@ HBPriceListGenerator class
 
 !HBPriceListGenerator class methodsFor: 'generator' stamp: 'dkh 5/20/2012 20:29'!
 generatePriceList: priceFilePath from: csvFilePath
-	"self generatePriceList: '/opt/git/HollingBerries/smalltalk_pricelist.txt' from: '/opt/git/HollingBerries/produce.csv'"
+	"self generatePriceList: '/opt/git/HollingBerries/smalltalk_pricefile.txt' from: '/opt/git/HollingBerries/produce.csv'"
 
 	| csvCollection directory |
 	FileStream
