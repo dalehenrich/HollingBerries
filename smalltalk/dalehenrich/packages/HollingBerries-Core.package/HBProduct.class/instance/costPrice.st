@@ -1,0 +1,3 @@
+business rules
+costPrice
+	^ costPrice

@@ -1,0 +1,16 @@
+{
+	"category" : "HollingBerries-Core",
+	"classinstvars" : [
+		 ],
+	"classtraitcomposition" : "{}",
+	"classvars" : [
+		 ],
+	"commentStamp" : "",
+	"instvars" : [
+		 ],
+	"name" : "HBGenericSupplier",
+	"pools" : [
+		 ],
+	"super" : "HBSupplier",
+	"traitcomposition" : "{}",
+	"type" : "normal" }
